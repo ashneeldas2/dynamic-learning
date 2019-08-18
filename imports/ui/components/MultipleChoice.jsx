@@ -6,7 +6,7 @@ import { TiArrowMove } from 'react-icons/ti';
 import { FaTimes, FaCopy } from 'react-icons/fa';
 import { MdNetworkCell } from 'react-icons/md';
 import { Tracker } from 'meteor/tracker';
-import { Button, Modal } from 'semantic-ui-react';
+import { Button, Modal, Form } from 'semantic-ui-react';
 
 export default class MultipleChoice extends React.Component {
   constructor(props) {
@@ -21,6 +21,8 @@ export default class MultipleChoice extends React.Component {
   }
 
   componentDidMount() {
+    Meteor.subscribe('getAccounts');
+
     Tracker.autorun(() => {
       const {
         curSlide,
@@ -52,8 +54,8 @@ export default class MultipleChoice extends React.Component {
     const btemp = this.clicked === 'b' ? 'red' : 'black';
     const ctemp = this.clicked === 'c' ? 'red' : 'black';
     const dtemp = this.clicked === 'd' ? 'red' : 'black';
-    if (this.state.acolor !== atemp || this.state.bcolor !== btemp || this.state.ccolor !== ctemp ||
-      this.state.dcolor !== dtemp) {
+    if (this.state.acolor !== atemp || this.state.bcolor !== btemp || this.state.ccolor !== ctemp
+      || this.state.dcolor !== dtemp) {
       this.setState({
         acolor: this.clicked === 'a' ? 'red' : 'black',
         bcolor: this.clicked === 'b' ? 'red' : 'black',
@@ -99,22 +101,56 @@ export default class MultipleChoice extends React.Component {
     updateSlides(updatedSlides);
   }
 
+  grade = (key) => {
+    this.setState({
+      currentGrading: key,
+      grading: true,
+    })
+  }
+
   answers() {
     const {
       curSlide,
       index,
-      slides
+      slides,
     } = this.props;
     const updatedSlides = JSON.parse(JSON.stringify(slides));
     const { responses } = updatedSlides[curSlide].questions[index];
     const keys = Object.keys(responses);
-    return keys.map(key => <div> {`${Meteor.users.findOne({_id: key}) && Meteor.users.findOne({_id: key}).username}: ${responses[key]}`} </div>);
+    return keys.map(key => (
+      <div>
+        {`${Meteor.users.findOne({ _id: key }) && Meteor.users.findOne({ _id: key }).username}: ${responses[key]}`}
+        <Button
+          style={{ marginLeft: '10px', marginBotton: '30px' }}
+          onClick={() => this.grade(key)}
+        >
+          Grade
+        </Button>
+      </div>
+    ));
   }
 
   handleClose() {
     this.setState({
       modalOpen: false,
     });
+  }
+
+  updateGrade = () => {
+    const { currentGrading } = this.state;
+    const {
+      slides,
+      curSlide,
+      updateSlides,
+      index,
+    } = this.props;
+    const updatedSlides = JSON.parse(JSON.stringify(slides));
+    if (!updatedSlides[curSlide].questions[index].grades[currentGrading]) {
+      updatedSlides[curSlide].questions[index].grades[currentGrading] = [];
+    }
+    updatedSlides[curSlide].questions[index].grades[currentGrading][0] = this.numbergrade.value;
+    updatedSlides[curSlide].questions[index].grades[currentGrading][1] = this.comments.value;
+    updateSlides(updatedSlides);
   }
 
   render() {
@@ -130,6 +166,8 @@ export default class MultipleChoice extends React.Component {
     } = this.props;
     const {
       modalOpen,
+      grading, 
+      currentGrading,
     } = this.state;
     const updatedSlides = JSON.parse(JSON.stringify(slides));
 
@@ -380,6 +418,59 @@ export default class MultipleChoice extends React.Component {
 
           </Modal.Content>
 
+        </Modal>
+        <Modal
+          open={grading}
+          onClose={() => this.setState({ grading: false })}
+          size="tiny"
+        >
+          <Modal.Header>
+            Grade &nbsp;
+            {Meteor.users.findOne({ _id: currentGrading })
+            && Meteor.users.findOne({ _id: currentGrading }).username}
+            <Button className="close-button" onClick={() => this.setState({ grading: false })}>
+              X
+            </Button>
+          </Modal.Header>
+
+          <Modal.Content>
+            <Modal.Description>
+              <Form>
+                Grade from 0-4:
+                <Form.Field>
+                  <input
+                    type="number"
+                    min="0"
+                    max="4"
+                    style={{ width: '30%', marginTop: '5px' }}
+                    defaultValue={updatedSlides[curSlide].questions[index].grades[currentGrading]
+                      ? updatedSlides[curSlide].questions[index].grades[currentGrading][0] : 0
+                    }
+                    ref={e => this.numbergrade = e}
+                  />
+                </Form.Field>
+                Add comments:
+                <Form.Field>
+                  <input
+                    type="text"
+                    style={{ marginTop: '5px' }}
+                    defaultValue={updatedSlides[curSlide].questions[index].grades[currentGrading]
+                      ? updatedSlides[curSlide].questions[index].grades[currentGrading][1] : ''
+                    }
+                    ref={e => this.comments = e}
+                  />
+                </Form.Field>
+                <Form.Field>
+                  <Button
+                    onClick={() => this.updateGrade()}
+                  >
+                    Submit grade
+                  </Button>
+                </Form.Field>
+              </Form>
+            </Modal.Description>
+
+          </Modal.Content>
         </Modal>
       </Rnd>
     );

@@ -724,6 +724,7 @@ export class CreateWorkbook extends React.Component {
     const newQuestion = {
       content: '',
       responses: {},
+      grades: {},
     };
 
     updatedSlides[curSlide].shortresponse.push(newQuestion);
@@ -746,6 +747,7 @@ export class CreateWorkbook extends React.Component {
       c: '',
       d: '',
       responses: {},
+      grades: {},
     };
 
     updatedSlides[curSlide].questions.push(newQuestion);
