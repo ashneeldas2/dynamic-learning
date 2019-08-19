@@ -1109,6 +1109,7 @@ export class CreateWorkbook extends React.Component {
                   isPreview={false}
                   setCopiedState={this.setCopiedState}
                   scale={scaleX}
+                  workbookId={_id}
                 />
 
                 <MCQs
@@ -1120,6 +1121,7 @@ export class CreateWorkbook extends React.Component {
                   setCopiedState={this.setCopiedState}
                   userId={userId}
                   scale={scaleX}
+                  workbookId={_id}
                 />
                 <ShortResponses
                   slides={slides}

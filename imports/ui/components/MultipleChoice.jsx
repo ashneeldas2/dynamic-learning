@@ -7,6 +7,7 @@ import { FaTimes, FaCopy } from 'react-icons/fa';
 import { MdNetworkCell } from 'react-icons/md';
 import { Tracker } from 'meteor/tracker';
 import { Button, Modal, Form } from 'semantic-ui-react';
+import { Workbooks } from '../../api/workbooks';
 
 export default class MultipleChoice extends React.Component {
   constructor(props) {
@@ -105,7 +106,7 @@ export default class MultipleChoice extends React.Component {
     this.setState({
       currentGrading: key,
       grading: true,
-    })
+    });
   }
 
   answers() {
@@ -143,6 +144,7 @@ export default class MultipleChoice extends React.Component {
       curSlide,
       updateSlides,
       index,
+      workbookId,
     } = this.props;
     const updatedSlides = JSON.parse(JSON.stringify(slides));
     if (!updatedSlides[curSlide].questions[index].grades[currentGrading]) {
@@ -151,6 +153,7 @@ export default class MultipleChoice extends React.Component {
     updatedSlides[curSlide].questions[index].grades[currentGrading][0] = this.numbergrade.value;
     updatedSlides[curSlide].questions[index].grades[currentGrading][1] = this.comments.value;
     updateSlides(updatedSlides);
+    Meteor.call('workbooks.update', workbookId, updatedSlides);
   }
 
   render() {
@@ -166,8 +169,9 @@ export default class MultipleChoice extends React.Component {
     } = this.props;
     const {
       modalOpen,
-      grading, 
+      grading,
       currentGrading,
+      gradeModalOpen,
     } = this.state;
     const updatedSlides = JSON.parse(JSON.stringify(slides));
 
@@ -398,6 +402,7 @@ export default class MultipleChoice extends React.Component {
             />
           </div>
           { Meteor.userId() === userId && <Button style={{ marginTop: '15px' }} onClick={() => this.setState({ modalOpen: true })}> View Student Responses </Button> }
+          { Meteor.userId() !== userId && <Button style={{ marginTop: '15px' }} onClick={() => this.setState({ gradeModalOpen: true })}> View Grade </Button> }
         </div>
         <Modal
           open={modalOpen}
@@ -414,6 +419,50 @@ export default class MultipleChoice extends React.Component {
           <Modal.Content>
             <Modal.Description>
               { this.answers() }
+            </Modal.Description>
+
+          </Modal.Content>
+
+        </Modal>
+        <Modal
+          open={gradeModalOpen}
+          onClose={() => this.setState({ gradeModalOpen: false })}
+          size="tiny"
+        >
+          <Modal.Header>
+            Your grade for this question
+            <Button className="close-button" onClick={() => this.setState({ gradeModalOpen: false })}>
+              X
+            </Button>
+          </Modal.Header>
+
+          <Modal.Content>
+            <Modal.Description>
+              {updatedSlides[curSlide].questions[index].grades[Meteor.userId()]
+                ? (
+                  <div>
+                    <div>
+                      {' '}
+                      Your grade:
+                      {' '}
+                      {`${updatedSlides[curSlide].questions[index].grades[Meteor.userId()][0]}/4`}
+                      {' '}
+                    </div>
+                    <div>
+                      {' '}
+                      Comments:
+                      {' '}
+                      {updatedSlides[curSlide].questions[index].grades[Meteor.userId()][1]}
+                      {' '}
+                    </div>
+                  </div>
+                )
+                : (
+                  <div>
+                    You have not been assigned a grade yet.
+                  </div>
+                )
+              }
             </Modal.Description>
 
           </Modal.Content>
